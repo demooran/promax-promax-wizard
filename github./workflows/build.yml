@@ -1,4 +1,4 @@
-name: Build OpenWrt ProMax
+name: Build OpenWrt IPK Package
 
 on:
   workflow_dispatch:
@@ -32,37 +32,23 @@ jobs:
             cp -r luci-app-promax-wizard openwrt/package/
           fi
 
-      - name: Apply Custom Configurations & IP
-        run: |
-          cd openwrt
-          
-          # تحديد المعمارية واللوحة (مثال: Xiaomi CR6609)
-          echo "CONFIG_TARGET_ramips=y" >> .config
-          echo "CONFIG_TARGET_ramips_mt7621=y" >> .config
-          echo "CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_cr6609=y" >> .config
-          
-          # تفعيل حزمتك البرمجية تلقائياً أثناء البناء
-          echo "CONFIG_PACKAGE_luci-app-promax-wizard=y" >> .config
-
-          # تعديل الآيباد الافتراضي واسم المضيف إلى PROMAX
-          uci_default_settings="package/base-files/files/bin/config_generate"
-          if [ -f "$uci_default_settings" ]; then
-              sed -i 's/192.168.1.1/192.168.1.21/g' "$uci_default_settings"
-              sed -i 's/OpenWrt/PROMAX/g' "$uci_default_settings"
-          fi
-
-      - name: Make Config & Compile
+      - name: Compile Only IPK Package
         run: |
           cd openwrt
           make defconfig
-          make -j$(nproc) || make -j1 V=s
+          # أمر مخصص لبناء حزمتك البرمجية وحدها بصيغة IPK
+          make package/luci-app-promax-wizard/compile V=s
 
-      - name: Organize Files and Release
+      - name: Upload IPK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: promax-wizard-ipk
+          path: openwrt/bin/packages/**/*.ipk
+
+      - name: Organize and Release IPK
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: PROMAX-Router-v1
-          files: |
-            openwrt/bin/targets/ramips/mt7621/*.bin
-            openwrt/bin/targets/ramips/mt7621/*.trx
+          tag_name: PROMAX-IPK-v1
+          files: openwrt/bin/packages/**/*.ipk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
