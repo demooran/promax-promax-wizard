@@ -1,0 +1,68 @@
+name: Build OpenWrt ProMax
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Initialization Environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses5-dev gawk libssl-dev wget unzip python3 python3-pip rsync git zlib1g-dev swig libelf-dev
+
+      - name: Clone OpenWrt Source
+        run: |
+          git clone --branch openwrt-24.10 https://github.com/immortalwrt/immortalwrt.git openwrt
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Inject Custom Wizard Package
+        run: |
+          if [ -d luci-app-promax-wizard ]; then
+            cp -r luci-app-promax-wizard openwrt/package/
+          fi
+
+      - name: Apply Custom Configurations & IP
+        run: |
+          cd openwrt
+          
+          # تحديد المعمارية واللوحة (مثال: Xiaomi CR6609)
+          echo "CONFIG_TARGET_ramips=y" >> .config
+          echo "CONFIG_TARGET_ramips_mt7621=y" >> .config
+          echo "CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_cr6609=y" >> .config
+          
+          # تفعيل حزمتك البرمجية تلقائياً أثناء البناء
+          echo "CONFIG_PACKAGE_luci-app-promax-wizard=y" >> .config
+
+          # تعديل الآيباد الافتراضي واسم المضيف إلى PROMAX
+          uci_default_settings="package/base-files/files/bin/config_generate"
+          if [ -f "$uci_default_settings" ]; then
+              sed -i 's/192.168.1.1/192.168.1.21/g' "$uci_default_settings"
+              sed -i 's/OpenWrt/PROMAX/g' "$uci_default_settings"
+          fi
+
+      - name: Make Config & Compile
+        run: |
+          cd openwrt
+          make defconfig
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Organize Files and Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: PROMAX-Router-v1
+          files: |
+            openwrt/bin/targets/ramips/mt7621/*.bin
+            openwrt/bin/targets/ramips/mt7621/*.trx
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
