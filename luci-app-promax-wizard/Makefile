@@ -19,6 +19,10 @@ define Package/promax-wizard/description
   A quick setup wizard package for configuring AP, MESH, WDS and VLANs automatically.
 endef
 
+# إضافة هذا القسم الفارغ يمنع النظام من البحث عن ملفات للترجمة
+define Build/Compile
+endef
+
 define Package/promax-wizard/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./root/usr/bin/promax-wizard.sh $(1)/usr/bin/promax-wizard.sh
