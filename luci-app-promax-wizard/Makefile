@@ -4,8 +4,6 @@ PKG_NAME:=promax-wizard
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
 
-PKGARCH:=all
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/promax-wizard
@@ -13,13 +11,13 @@ define Package/promax-wizard
   CATEGORY:=Utilities
   TITLE:=Promax Quick Setup Wizard for OpenWrt
   DEPENDS:=+bash +wireless-tools +iw
+  PKGARCH:=all
 endef
 
 define Package/promax-wizard/description
   A quick setup wizard package for configuring AP, MESH, WDS and VLANs automatically.
 endef
 
-# إضافة هذا القسم الفارغ يمنع النظام من البحث عن ملفات للترجمة
 define Build/Compile
 endef
 
