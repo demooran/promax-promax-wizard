@@ -26,6 +26,9 @@ jobs:
           
       - name: Build Package
         run: |
+          echo "=== عرض محتويات المجلد الحالي للتأكد من مكان الملفات ==="
+          ls -la
+          
           mkdir -p openwrt-sdk/package/promax-wizard
           cp -r Makefile root openwrt-sdk/package/promax-wizard/
           
